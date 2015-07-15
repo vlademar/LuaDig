@@ -11,7 +11,11 @@ local garbageList =
     "Stone",
     "Cobblestone",
     "Dirt",
-    "Gravel"
+    "Gravel",
+    "Red Granite",
+    "Red Granite Cobblestone",
+    "Black Granite",
+    "Black Granite Cobblestone",
 }
 
 local face = sides.forward
@@ -278,7 +282,7 @@ local function countFreeSlots()
     for i = 1, robot.inventorySize() do
         local space = robot.space(i)
         local count = robot.count(i)
-        if count > space * 3 then
+        if count * 3 < space then
             freeSlots = freeSlots + 1
         end
     end
@@ -296,10 +300,10 @@ local function itemIsInGarbageList(itemData)
     return false
 end
 
-function smartMoves.dropGarbage(minFreeSlotsCont)
-    minFreeSlotsCont = minFreeSlotsCont or 5
+function smartMoves.dropGarbage(minFreeSlotsCount)
+    minFreeSlotsCount = minFreeSlotsCount or 5
 
-    if countFreeSlots() >= minFreeSlotsCont then
+    if countFreeSlots() >= minFreeSlotsCount then
         return true
     end
 
@@ -311,7 +315,7 @@ function smartMoves.dropGarbage(minFreeSlotsCont)
         end
     end
 
-    return countFreeSlots() >= minFreeSlotsCont
+    return countFreeSlots() >= minFreeSlotsCount
 end
 
 return smartMoves
