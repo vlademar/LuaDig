@@ -6,6 +6,7 @@ local sides = require("sides")
 local component = require("component")
 local invController = component.inventory_controller
 
+-- [!] Переделать на связку Name:Meta
 local garbageList = 
 {
     "Stone",
@@ -16,7 +17,11 @@ local garbageList =
     "Red Granite Cobblestone",
     "Black Granite",
     "Black Granite Cobblestone",
+    "Pile of Stone Dust",
+    "Impure Pile of Stone Dust"
 }
+
+local MAX_ATTEMPT = 30
 
 local face = sides.forward
 local x, y, z = 0, 0, 0
@@ -116,17 +121,19 @@ function smartMoves.forward(stepCount)
     for stepNo = 1, stepCount do
         local attempt, moved, err = 0, false
 
-        while attempt < 10 and not moved do
+        while attempt < MAX_ATTEMPT and not moved do
             moved, err = robot.forward()
             
             if moved then
                 x, z = x + dX, z + dZ
-            elseif err == "impossible move" then
-                return false, stepNo - 1
             else
                 robot.swing()
                 attempt = attempt + 1
             end
+        end
+
+        if attempt == MAX_ATTEMPT then
+            return false, stepNo - 1
         end
     end
 
@@ -161,17 +168,19 @@ function smartMoves.up(stepCount)
     for stepNo = 1, stepCount do
         local attempt, moved, err = 0, false
 
-        while attempt < 10 and not moved do
+        while attempt < MAX_ATTEMPT and not moved do
             moved, err = robot.up()
             
             if moved then
                 y = y + 1
-            elseif err == "impossible move" then
-                return false, stepNo - 1
             else
                 robot.swingUp()
                 attempt = attempt + 1
             end
+        end
+        
+        if attempt == MAX_ATTEMPT then
+            return false, stepNo - 1
         end
     end
 
@@ -189,17 +198,19 @@ function smartMoves.down(stepCount)
     for stepNo = 1, stepCount do
         local attempt, moved, err = 0, false
 
-        while attempt < 10 and not moved do
+        while attempt < MAX_ATTEMPT and not moved do
             moved, err = robot.down()
             
             if moved then
                 y = y - 1
-            elseif err == "impossible move" then
-                return false, stepNo - 1
             else
                 robot.swingDown()
                 attempt = attempt + 1
             end
+        end
+
+        if attempt == MAX_ATTEMPT then
+            return false, stepNo - 1
         end
     end
 
@@ -220,11 +231,16 @@ function smartMoves.goToRel(deltaX, deltaY, deltaZ, mode)
     deltaZ = ( deltaZ or 0 )
     mode = mode or "yxz"
 
-    if mode == "yxz" then
+    local splittedMode = {}
+    string.gsub(mode, ".", function(c) table.insert(splittedMode, c) end)
+
+    for _, axe in splittedMode do
+
+    if axe == "y" then
         if not smartMoves.up(deltaY) then
             return false
         end
-
+    elseif axe == "x" then
         if deltaX >= 0 then
             smartMoves.face(sides.posx)
         else 
@@ -234,7 +250,7 @@ function smartMoves.goToRel(deltaX, deltaY, deltaZ, mode)
         if not smartMoves.forward(math.abs(deltaX)) then 
             return false
         end
-
+    elseif axe == "z" then
         if deltaZ >= 0 then
             smartMoves.face(sides.posz)
         else 
@@ -242,30 +258,6 @@ function smartMoves.goToRel(deltaX, deltaY, deltaZ, mode)
         end
 
         if not smartMoves.forward(math.abs(deltaZ)) then 
-            return false
-        end
-    elseif mode == "zxy" then
-        if deltaZ >= 0 then
-            smartMoves.face(sides.posz)
-        else 
-            smartMoves.face(sides.negz)
-        end
-
-        if not smartMoves.forward(math.abs(deltaZ)) then 
-            return false
-        end 
-        
-        if deltaX >= 0 then
-            smartMoves.face(sides.posx)
-        else 
-            smartMoves.face(sides.negx)
-        end
-
-        if not smartMoves.forward(math.abs(deltaX)) then 
-            return false
-        end
-
-        if not smartMoves.up(deltaY) then
             return false
         end
     else
@@ -280,9 +272,8 @@ local function countFreeSlots()
     local freeSlots = 0
 
     for i = 1, robot.inventorySize() do
-        local space = robot.space(i)
         local count = robot.count(i)
-        if count * 3 < space then
+        if count == 0 then
             freeSlots = freeSlots + 1
         end
     end

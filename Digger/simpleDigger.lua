@@ -41,6 +41,7 @@ local function dig()
 
     while true do
         if not moves.forward() then
+            print("Way is blocked")
             return
         end
 
@@ -48,16 +49,19 @@ local function dig()
         robot.swingDown()
 
         if computer.energy() < minEnergyLevel then
+            print("Low energy")
             return
         end
 
         if robot.durability() < 0.1 then
+            print("Tool is nearly broken")
             return
         end
 
         if tillTorch == 0 then
             tillTorch = 10
             if not putTorch() then
+                print("Out of torches")
                 return 
             end
         end
@@ -65,11 +69,12 @@ local function dig()
         if tillInventoryCheck == 0 then
             tillInventoryCheck = 30
             if not moves.dropGarbage(3) then 
+                print("Inventory full")
                 return 
             end
 
-              term.clear()
-              print(stepCount.." steps")
+            term.clear()
+            print(stepCount.." steps")
         end
 
         stepCount = stepCount + 1
